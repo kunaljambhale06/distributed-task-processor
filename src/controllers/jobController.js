@@ -1,29 +1,14 @@
 import Job from "../models/Job.js";
-import { sendToQueue } from "../queues/jobProducer.js";
+import { sendToQueue } from "../config/rabbitmq.js";
 
 export const createJob = async (req, res) => {
-    try {
-        const { type, inputData } = req.body;
+  try {
+    const job = await Job.create(req.body);
 
-        const job = await Job.create({
-            type,
-            inputData,
-            status: "queued"
-        });
+    await sendToQueue(job);
 
-        sendToQueue({
-            jobId: job._id,
-            type: job.type,
-            inputData: job.inputData
-        });
-
-        res.json({
-            success: true,
-            job
-        });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Job creation failed" });
-    }
+    res.status(201).json(job);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };

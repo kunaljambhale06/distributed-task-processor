@@ -1,8 +1,9 @@
 import express from "express";
 import dotenv from "dotenv";
 import connectDB from "./src/config/db.js";
-import { connectQueue } from "./src/queues/jobProducer.js";
 import jobRoutes from "./src/routes/jobRoute.js";
+import { connectQueue } from "./src/config/rabbitmq.js";
+
 
 dotenv.config();
 

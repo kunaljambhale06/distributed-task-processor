@@ -1,20 +1,5 @@
-import amqp from "amqplib";
+import { sendToQueue } from "./config/rabbitmq.js";
 
-let channel;
-
-export const connectQueue = async () => {
-    const connection = await amqp.connect("amqp://localhost");
-    channel = await connection.createChannel();
-
-    await channel.assertQueue("task_queue", { durable: true });
-
-    console.log(" RabbitMQ Connected");
-};
-
-export const sendToQueue = (message) => {
-    channel.sendToQueue(
-        "task_queue",
-        Buffer.from(JSON.stringify(message)),
-        { persistent: true }
-    );
-};
+for (let i = 0; i < 100; i++) {
+  await sendToQueue({ id: i, task: "Process Job" });
+}
