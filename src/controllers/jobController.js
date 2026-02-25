@@ -12,3 +12,12 @@ export const createJob = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const getJobs = async (req, res) => {
+  try {
+    const jobs = await Job.find().sort({ createdAt: -1 });
+    res.json(jobs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
