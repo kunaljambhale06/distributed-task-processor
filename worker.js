@@ -22,25 +22,61 @@ const startWorker = async () => {
 
       console.log("Processing Job:", job._id);
 
-      //  Mark as processing
-      await Job.findByIdAndUpdate(job._id, {
-        status: "processing",
-      });
+      try {
+        await Job.findByIdAndUpdate(job._id, {
+          status: "processing",
+        });
 
-      //  Simulate heavy work
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+        const success = Math.random() > 0.3;
 
-      //  Mark as completed
-      await Job.findByIdAndUpdate(job._id, {
-        status: "completed",
-      });
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      console.log("Job Completed:", job._id);
+        if (!success) {
+          throw new Error("Random Job Failure 😈");
+        }
 
-      channel.ack(msg);
+        await Job.findByIdAndUpdate(job._id, {
+          status: "completed",
+        });
+
+        console.log("Job Completed:", job._id);
+
+        channel.ack(msg);
+
+      } catch (err) {
+        console.log("Job Failed:", job._id);
+
+        const jobFromDB = await Job.findById(job._id);
+
+        const retries = jobFromDB.retries || 0;
+
+        if (retries < 3) {
+          console.log("Retrying Job:", job._id);
+
+          await Job.findByIdAndUpdate(job._id, {
+            status: "pending",
+            retries: retries + 1,
+          });
+
+          channel.sendToQueue(
+            "jobQueue",
+            Buffer.from(JSON.stringify(job))
+          );
+
+        } else {
+          console.log("Job Permanently Failed:", job._id);
+
+          await Job.findByIdAndUpdate(job._id, {
+            status: "failed",
+          });
+        }
+
+        channel.ack(msg);
+      }
     });
-  } catch (err) {
-    console.error(err);
+
+  } catch (error) {
+    console.error("Worker Error:", error);
   }
 };
 
