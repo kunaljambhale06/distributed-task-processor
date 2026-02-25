@@ -32,7 +32,7 @@ const startWorker = async () => {
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
         if (!success) {
-          throw new Error("Random Job Failure 😈");
+          throw new Error("Random Job Failure");
         }
 
         await Job.findByIdAndUpdate(job._id, {
