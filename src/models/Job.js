@@ -7,6 +7,10 @@ const jobSchema = new mongoose.Schema(
       type: String,
       default: "pending",
     },
+    retries: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
