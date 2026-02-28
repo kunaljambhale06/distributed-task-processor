@@ -70,7 +70,6 @@ const startWorker = async () => {
             status: "failed",
           });
         }
-
         channel.ack(msg);
       }
     });
