@@ -13,7 +13,17 @@ const startWorker = async () => {
     const connection = await amqp.connect("amqp://localhost");
     const channel = await connection.createChannel();
 
-    await channel.assertQueue("jobQueue");
+    await channel.assertQueue("jobs", {
+      durable: true,
+      arguments: {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "failed_jobs"
+      }
+    });
+
+    await channel.assertQueue("failed_jobs", {
+      durable: true
+    });
 
     console.log("Worker Waiting For Jobs...");
 
@@ -50,19 +60,13 @@ const startWorker = async () => {
 
         const retries = jobFromDB.retries || 0;
 
-        if (retries < 3) {
-          console.log("Retrying Job:", job._id);
-
-          await Job.findByIdAndUpdate(job._id, {
-            status: "pending",
-            retries: retries + 1,
-          });
-
-          channel.sendToQueue(
-            "jobQueue",
-            Buffer.from(JSON.stringify(job))
-          );
-
+        if (job.retries >= 3) {
+          job.status = "failed";
+          await job.save();
+          console.log("Job moved to DLQ:", job._id);
+          channel.nack(msg, false, false);
+          // false = don't requeue
+          // RabbitMQ sends it to failed_jobs
         } else {
           console.log("Job Permanently Failed:", job._id);
 
