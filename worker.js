@@ -5,6 +5,9 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const QUEUE = "jobQueue";
+const DLQ = "failed_jobs";
+
 const startWorker = async () => {
   try {
     
@@ -15,90 +18,92 @@ const startWorker = async () => {
     const connection = await amqp.connect("amqp://localhost");
     const channel = await connection.createChannel();
 
-    // Main Queue with DLQ configuration
-    await channel.assertQueue("jobs", {
+    // main queue with DLX
+    await channel.assertQueue(QUEUE, {
       durable: true,
       arguments: {
         "x-dead-letter-exchange": "",
-        "x-dead-letter-routing-key": "failed_jobs",
+        "x-dead-letter-routing-key": DLQ,
       },
     });
 
-    // Dead Letter Queue
-    await channel.assertQueue("failed_jobs", {
+    // DLQ
+    await channel.assertQueue(DLQ, {
       durable: true,
     });
 
     console.log("Worker Waiting For Jobs...");
 
-    // Consume Jobs
-    channel.consume("jobs", async (msg) => {
+    channel.consume(QUEUE, async (msg) => {
       if (!msg) return;
 
       const jobData = JSON.parse(msg.content.toString());
-      console.log("Processing Job:", jobData._id);
+      const jobId = jobData._id;
+
+      console.log("Processing Job:", jobId);
 
       try {
-        // Mark job as processing
-        await Job.findByIdAndUpdate(jobData._id, {
+        const jobFromDB = await Job.findById(jobId);
+
+        if (!jobFromDB) {
+          channel.ack(msg);
+          return;
+        }
+
+        if (jobFromDB.status === "completed") {
+          channel.ack(msg);
+          return;
+        }
+
+        await Job.findByIdAndUpdate(jobId, {
           status: "processing",
         });
 
-        //  Force failure for testing (REMOVE LATER)
-        throw new Error("Force fail");
+        await new Promise((r) => setTimeout(r, 1000));
 
-        // Simulated processing delay
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        // Random success logic
         const success = Math.random() > 0.3;
 
-        if (!success) {
-          throw new Error("Random Job Failure");
-        }
+        if (!success) throw new Error("Fail");
 
-        // Mark as completed
-        await Job.findByIdAndUpdate(jobData._id, {
+        await Job.findByIdAndUpdate(jobId, {
           status: "completed",
         });
 
-        console.log("Job Completed:", jobData._id);
+        console.log("Completed:", jobId);
 
         channel.ack(msg); // Success
 
       } catch (err) {
-        console.log("Job Failed:", jobData._id);
+        const jobFromDB = await Job.findById(jobId);
 
-        const jobFromDB = await Job.findById(jobData._id);
-        const retries = jobFromDB?.retries || 0;
+        const retries = jobFromDB.retries || 0;
 
         if (retries >= 3) {
-          //  Move to DLQ
-          await Job.findByIdAndUpdate(jobData._id, {
+          console.log("Send to DLQ:", jobId);
+
+          await Job.findByIdAndUpdate(jobId, {
             status: "failed",
           });
 
-          console.log("Job moved to DLQ:", jobData._id);
+          // send to DLQ automatically
+          channel.nack(msg, false, false);
 
-          channel.nack(msg, false, false); //  Don't requeue → goes to DLQ
         } else {
-          
-          await Job.findByIdAndUpdate(jobData._id, {
-            status: "pending",
+          console.log("Retry:", retries + 1);
+
+          await Job.findByIdAndUpdate(jobId, {
             retries: retries + 1,
+            status: "pending",
           });
 
-          console.log(
-            `Retrying Job ${jobData._id} (Attempt ${retries + 1})`
-          );
-
+          // requeue
           channel.nack(msg, false, true);
         }
       }
     });
 
-  } catch (error) {
-    console.error("Worker Error:", error);
+  } catch (err) {
+    console.error(err);
   }
 };
 
