@@ -2,31 +2,24 @@ import amqp from "amqplib";
 
 let channel;
 
+const QUEUE = "jobQueue";
+const DLQ = "failed_jobs";
+
 export const connectQueue = async () => {
   const connection = await amqp.connect("amqp://localhost");
 
   channel = await connection.createChannel();
 
-<<<<<<< HEAD
-  // ✅ Declare with SAME config as worker
-  await channel.assertQueue("jobs", {
+  await channel.assertQueue(QUEUE, {
     durable: true,
     arguments: {
       "x-dead-letter-exchange": "",
-      "x-dead-letter-routing-key": "failed_jobs"
-    }
-=======
-  await channel.assertQueue("jobQueue", {
-    durable: true,
-    arguments: {
-      "x-dead-letter-exchange": "",
-      "x-dead-letter-routing-key": "failed_jobs",
+      "x-dead-letter-routing-key": DLQ,
     },
   });
 
-  await channel.assertQueue("failed_jobs", {
+  await channel.assertQueue(DLQ, {
     durable: true,
->>>>>>> 6ea9e80 (updated DLQ logic for retries and failure)
   });
 
   console.log("RabbitMQ Connected");
@@ -34,10 +27,7 @@ export const connectQueue = async () => {
 
 export const sendToQueue = async (data) => {
   channel.sendToQueue(
-    "jobs",
-    Buffer.from(JSON.stringify(data)),
-    { persistent: true }
+    QUEUE,
+    Buffer.from(JSON.stringify(data))
   );
-
-  console.log("Sent to queue:", data._id);
 };
