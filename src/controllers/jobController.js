@@ -1,5 +1,28 @@
 import Job from "../models/Job.js";
 import { sendToQueue } from "../config/rabbitmq.js";
+import amqp from "amqplib";
+
+
+export const getQueueStats = async (req, res) => {
+  try {
+    const connection = await amqp.connect("amqp://localhost");
+    const channel = await connection.createChannel();
+
+    const jobQueue = await channel.checkQueue("jobQueue");
+    const failedQueue = await channel.checkQueue("failed_jobs");
+
+    res.json({
+      jobQueue: jobQueue.messageCount,
+      failed_jobs: failedQueue.messageCount,
+    });
+
+    await channel.close();
+    await connection.close();
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 export const createJob = async (req, res) => {
   try {
