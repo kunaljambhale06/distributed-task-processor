@@ -1,6 +1,7 @@
 import Job from "../models/Job.js";
 import { sendToQueue } from "../config/rabbitmq.js";
 import amqp from "amqplib";
+import { getChannel } from "../config/rabbitmq.js";
 
 
 // ---------------- STATS ----------------
@@ -138,5 +139,72 @@ export const resetSystem = async (req, res) => {
 
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+export const uploadJob = async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({
+        message: "No file uploaded",
+      });
+    }
+
+    const job = await Job.create({
+      status: "pending",
+      imagePath: file.path,
+    });
+
+    const channel = getChannel();
+
+    
+
+    channel.sendToQueue(
+      "jobQueue",
+      Buffer.from(
+        JSON.stringify({
+          jobId: job._id,
+        })
+      ),
+      { persistent: true }
+    );
+
+    res.json({
+      message: "Image job added",
+      job,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: "Upload failed",
+    });
+  }
+};
+
+export const addJob = async (req, res) => {
+  try {
+    const job = await Job.create({
+      name: "Manual Job",
+      status: "pending",
+    });
+
+    const channel = getChannel();
+
+    channel.sendToQueue(
+      "jobQueue",
+      Buffer.from(
+        JSON.stringify({
+          jobId: job._id,
+        })
+      ),
+      { persistent: true }
+    );
+
+    res.json(job);
+  } catch (err) {
+    res.status(500).json({ message: "Error" });
   }
 };
