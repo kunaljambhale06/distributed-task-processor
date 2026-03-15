@@ -24,6 +24,7 @@ export const getQueueStats = async (req, res) => {
   }
 };
 
+
 export const createJob = async (req, res) => {
   try {
     const job = await Job.create(req.body);
@@ -36,6 +37,7 @@ export const createJob = async (req, res) => {
   }
 };
 
+
 export const getJobs = async (req, res) => {
   try {
     const jobs = await Job.find().sort({ createdAt: -1 });
@@ -45,6 +47,7 @@ export const getJobs = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 export const getJobStats = async (req, res) => {
   try {
@@ -73,6 +76,82 @@ export const getJobStats = async (req, res) => {
       completed,
       failed,
     });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+/* =======================
+   ADMIN RESET SYSTEM
+======================= */
+
+export const resetSystem = async (req, res) => {
+  try {
+
+    const connection = await amqp.connect("amqp://localhost");
+    const channel = await connection.createChannel();
+
+    await channel.assertQueue("jobQueue");
+    await channel.assertQueue("failed_jobs");
+
+    await channel.purgeQueue("jobQueue");
+    await channel.purgeQueue("failed_jobs");
+
+    await Job.deleteMany({});
+
+    await channel.close();
+    await connection.close();
+
+    res.json({
+      message: "System reset successful",
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+};
+
+export const clearFailed = async (req, res) => {
+  try {
+    const connection = await amqp.connect("amqp://localhost");
+    const channel = await connection.createChannel();
+
+    await channel.assertQueue("failed_jobs");
+
+    await channel.purgeQueue("failed_jobs");
+
+    await channel.close();
+    await connection.close();
+
+    res.json({ message: "Failed queue cleared" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+export const retryFailed = async (req, res) => {
+  try {
+    const failedJobs = await Job.find({ status: "failed" });
+
+    for (let job of failedJobs) {
+
+      job.status = "pending";
+      job.retries = 0;
+
+      await job.save();
+
+      await sendToQueue(job);
+    }
+
+    res.json({ message: "Retry started" });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
