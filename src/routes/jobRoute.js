@@ -6,8 +6,7 @@ import {
   getJobStats,
   getQueueStats,
   resetSystem,
-  clearFailed,
-  retryFailed,
+  clearFailed
 } from "../controllers/jobController.js";
 
 const router = express.Router();
@@ -23,7 +22,5 @@ router.get("/queue-stats", getQueueStats);
 router.post("/admin/reset", resetSystem);
 
 router.post("/clear-failed", clearFailed);
-
-router.post("/retry-failed", retryFailed);
 
 export default router;

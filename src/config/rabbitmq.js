@@ -6,10 +6,17 @@ const QUEUE = "jobQueue";
 const DLQ = "failed_jobs";
 
 export const connectQueue = async () => {
+
   const connection = await amqp.connect("amqp://localhost");
 
   channel = await connection.createChannel();
 
+  // DLQ first
+  await channel.assertQueue(DLQ, {
+    durable: true,
+  });
+
+  // main queue with DLQ config
   await channel.assertQueue(QUEUE, {
     durable: true,
     arguments: {
@@ -18,16 +25,16 @@ export const connectQueue = async () => {
     },
   });
 
-  await channel.assertQueue(DLQ, {
-    durable: true,
-  });
-
   console.log("RabbitMQ Connected");
 };
 
-export const sendToQueue = async (data) => {
+
+export const sendToQueue = async (job) => {
+
   channel.sendToQueue(
     QUEUE,
-    Buffer.from(JSON.stringify(data))
+    Buffer.from(JSON.stringify(job)),
+    { persistent: true }
   );
+
 };
