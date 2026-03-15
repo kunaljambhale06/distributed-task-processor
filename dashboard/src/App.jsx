@@ -1,5 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState  } from "react";
 import API from "./api";
+
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 function App() {
   const [jobs, setJobs] = useState([]);
@@ -18,10 +30,22 @@ function App() {
 
   useEffect(() => {
     fetchData();
-
     const i = setInterval(fetchData, 2000);
     return () => clearInterval(i);
   }, []);
+
+  const pieData = [
+    { name: "pending", value: stats.pending || 0 },
+    { name: "completed", value: stats.completed || 0 },
+    { name: "failed", value: stats.failed || 0 },
+  ];
+
+  const queueData = [
+    { name: "jobQueue", value: queue.jobQueue || 0 },
+    { name: "failed_jobs", value: queue.failed_jobs || 0 },
+  ];
+
+  const COLORS = ["#facc15", "#4ade80", "#f87171"];
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -52,16 +76,55 @@ function App() {
 
       </div>
 
-      {/* Queue */}
+      {/* Charts */}
 
-      <div className="mb-6">
+      <div className="grid grid-cols-2 gap-6 mb-6">
+
+        {/* Pie Chart */}
 
         <div className="bg-white p-4 rounded shadow">
-          Job Queue: {queue.jobQueue}
+
+          <h2 className="mb-2 font-bold">
+            Job Status
+          </h2>
+
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                outerRadius={100}
+                label
+              >
+                {pieData.map((entry, index) => (
+                  <Cell
+                    key={index}
+                    fill={COLORS[index]}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+
         </div>
 
-        <div className="bg-white p-4 rounded shadow mt-2">
-          Failed Queue: {queue.failed_jobs}
+        {/* Bar Chart */}
+
+        <div className="bg-white p-4 rounded shadow">
+
+          <h2 className="mb-2 font-bold">
+            Queue Size
+          </h2>
+
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={queueData}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value" />
+            </BarChart>
+          </ResponsiveContainer>
+
         </div>
 
       </div>
