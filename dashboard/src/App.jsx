@@ -2,179 +2,192 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
-//TODO: - Fix the buttons logic, they are not working as expected. 
-const API = axios.create({
-  baseURL: "http://localhost:5000",
-});
+const API = "http://localhost:5000/jobs";
 
-function App() {
+export default function App() {
   const [jobs, setJobs] = useState([]);
   const [stats, setStats] = useState({});
   const [queue, setQueue] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  const fetchData = async () => {
+  const fetchAll = async () => {
     try {
-      const jobsRes = await API.get("/jobs");
-      const statsRes = await API.get("/jobs/stats");
-      const queueRes = await API.get("/jobs/queue-stats");
+      const [j, s, q] = await Promise.all([
+        axios.get(API),
+        axios.get(`${API}/stats`),
+        axios.get(`${API}/queue-stats`),
+      ]);
 
-      
-
-      const sorted = jobsRes.data.sort((a, b) => {
-        const order = {
-          failed: 0,
-          pending: 1,
-          processing: 2,
-          completed: 3,
-        };
-
-        return order[a.status] - order[b.status];
+      // failed first
+      const sorted = [...j.data].sort((a, b) => {
+        if (a.status === "failed") return -1;
+        if (b.status === "failed") return 1;
+        return 0;
       });
 
       setJobs(sorted);
-      setStats(statsRes.data);
-      setQueue(queueRes.data);
-
+      setStats(s.data);
+      setQueue(q.data);
     } catch {
       toast.error("Fetch error");
     }
   };
 
   useEffect(() => {
-    fetchData();
-
-    const interval = setInterval(fetchData, 2000);
-
-    return () => clearInterval(interval);
+    fetchAll();
+    const t = setInterval(fetchAll, 3000);
+    return () => clearInterval(t);
   }, []);
 
-  
-
-  const resetSystem = async () => {
-    const t = toast.loading("Resetting...");
-
+  const addJob = async () => {
     try {
-      await API.post("/jobs/admin/reset");
-
-      toast.success("System reset", { id: t });
-
-      fetchData();
+      setLoading(true);
+      await axios.post(API, { name: "Job" });
+      toast.success("Job added");
+      fetchAll();
     } catch {
-      toast.error("Reset failed", { id: t });
+      toast.error("Error");
+    } finally {
+      setLoading(false);
     }
   };
 
- 
-
   const clearFailed = async () => {
-    const t = toast.loading("Clearing failed...");
-
     try {
-      await API.post("/jobs/clear-failed");
-
-      toast.success("Failed queue cleared", { id: t });
-
-      fetchData();
+      await axios.post(`${API}/clear-failed`);
+      toast.success("Failed cleared");
+      fetchAll();
     } catch {
-      toast.error("Clear failed", { id: t });
+      toast.error("Error");
     }
+  };
+
+  const reset = async () => {
+    try {
+      await axios.post(`${API}/admin/reset`);
+      toast.success("System reset");
+      fetchAll();
+    } catch {
+      toast.error("Error");
+    }
+  };
+
+  const badge = (s) => {
+    if (s === "failed")
+      return <span className="bg-red-500 text-white px-2 py-1 rounded">FAILED</span>;
+
+    if (s === "completed")
+      return (
+        <span className="bg-green-500 text-white px-2 py-1 rounded">
+          COMPLETED
+        </span>
+      );
+
+    if (s === "pending")
+      return (
+        <span className="bg-yellow-500 text-white px-2 py-1 rounded">
+          PENDING
+        </span>
+      );
+
+    if (s === "processing")
+      return (
+        <span className="bg-blue-500 text-white px-2 py-1 rounded">
+          PROCESSING
+        </span>
+      );
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <div className="p-6">
 
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        }}
-      />
+      <Toaster position="top-right" />
 
-      <h1 className="text-3xl font-bold mb-6">
+      <h1 className="text-2xl font-bold mb-4">
         Distributed Task Dashboard
       </h1>
 
-      {/* STATS */}
+      {/* stats cards */}
 
-      <div className="grid grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-5 gap-4 mb-4">
 
-        <div className="bg-gray-800 p-4 rounded">
-          Total
-          <p>{stats.total}</p>
+        <div className="bg-gray-200 p-3 rounded">
+          Total: {stats.total}
         </div>
 
-        <div className="bg-yellow-700 p-4 rounded">
-          Pending
-          <p>{stats.pending}</p>
+        <div className="bg-yellow-200 p-3 rounded">
+          Pending: {stats.pending}
         </div>
 
-        <div className="bg-blue-700 p-4 rounded">
-          Processing
-          <p>{stats.processing}</p>
+        <div className="bg-blue-200 p-3 rounded">
+          Processing: {stats.processing}
         </div>
 
-        <div className="bg-green-700 p-4 rounded">
-          Completed
-          <p>{stats.completed}</p>
+        <div className="bg-green-200 p-3 rounded">
+          Completed: {stats.completed}
         </div>
 
-        <div className="bg-red-700 p-4 rounded">
-          Failed
-          <p>{stats.failed}</p>
+        <div className="bg-red-200 p-3 rounded">
+          Failed: {stats.failed}
         </div>
 
       </div>
 
-      {/* QUEUE */}
+      {/* queue stats */}
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="bg-gray-100 p-3 rounded mb-4">
 
-        <div className="bg-gray-800 p-4 rounded">
-          Job Queue
-          <p>{queue.jobQueue}</p>
-        </div>
+        <h2 className="font-bold mb-2">Queue Stats</h2>
 
-        <div className="bg-red-800 p-4 rounded">
-          Failed Queue
-          <p>{queue.failed_jobs}</p>
-        </div>
+        JobQueue: {queue.jobQueue} <br />
+
+        FailedQueue: {queue.failed_jobs}
 
       </div>
 
-      {/* BUTTONS */}
+      {/* admin */}
 
-      <div className="flex gap-4 mb-6">
+      <div className="bg-gray-100 p-3 rounded mb-4">
+
+        <h2 className="font-bold mb-2">Admin Actions</h2>
+
+        <button
+          onClick={addJob}
+          className="bg-blue-500 text-white px-3 py-1 mr-2 rounded"
+        >
+          Add Job
+        </button>
 
         <button
           onClick={clearFailed}
-          className="bg-red-700 px-4 py-2 rounded"
+          className="bg-red-500 text-white px-3 py-1 mr-2 rounded"
         >
-          Clear Failed Queue
+          Clear Failed
         </button>
 
         <button
-          onClick={resetSystem}
-          className="bg-purple-700 px-4 py-2 rounded"
+          onClick={reset}
+          className="bg-black text-white px-3 py-1 rounded"
         >
-          Reset System
+          Reset
         </button>
 
       </div>
 
-      {/* TABLE */}
+      {/* table */}
 
-      <table className="w-full border border-gray-700">
+      <table className="w-full border border-black">
 
-        <thead className="bg-gray-700">
+        <thead>
 
-          <tr>
+          <tr className="bg-gray-300">
 
             <th className="border p-2">ID</th>
+
             <th className="border p-2">Name</th>
+
             <th className="border p-2">Status</th>
+
             <th className="border p-2">Retries</th>
 
           </tr>
@@ -183,38 +196,24 @@ function App() {
 
         <tbody>
 
-          {jobs.map((job) => (
+          {jobs.map((j) => (
 
-            <tr key={job._id}>
+            <tr key={j._id}>
 
               <td className="border p-2">
-                {job._id.slice(-6)}
+                {j._id.slice(-6)}
               </td>
 
               <td className="border p-2">
-                {job.name}
+                {j.name}
               </td>
 
               <td className="border p-2">
-
-                <span
-                  className={
-                    job.status === "failed"
-                      ? "text-red-400 font-bold"
-                      : job.status === "completed"
-                      ? "text-green-400"
-                      : job.status === "processing"
-                      ? "text-yellow-400"
-                      : "text-gray-300"
-                  }
-                >
-                  {job.status}
-                </span>
-
+                {badge(j.status)}
               </td>
 
               <td className="border p-2">
-                {job.retries}
+                {j.retries || 0} / 3
               </td>
 
             </tr>
@@ -228,5 +227,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
