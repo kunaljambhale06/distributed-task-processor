@@ -2,6 +2,9 @@ import amqp from "amqplib";
 import mongoose from "mongoose";
 import Job from "./src/models/Job.js";
 import dotenv from "dotenv";
+import sharp from "sharp";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 
@@ -10,15 +13,13 @@ const DLQ = "failed_jobs";
 
 const startWorker = async () => {
   try {
-    
     await mongoose.connect(process.env.MONGO_URI);
     console.log("Worker DB Connected");
 
-    
     const connection = await amqp.connect("amqp://localhost");
     const channel = await connection.createChannel();
 
-    // main queue with DLX
+    // main queue with DLQ
     await channel.assertQueue(QUEUE, {
       durable: true,
       arguments: {
@@ -38,7 +39,9 @@ const startWorker = async () => {
       if (!msg) return;
 
       const jobData = JSON.parse(msg.content.toString());
-      const jobId = jobData._id;
+
+      // IMPORTANT
+      const jobId = jobData.jobId || jobData._id;
 
       console.log("Processing Job:", jobId);
 
@@ -59,9 +62,31 @@ const startWorker = async () => {
           status: "processing",
         });
 
+        // -------------------------
+        // IMAGE PROCESSING PART
+        // -------------------------
+
+        if (jobFromDB.imagePath) {
+          const inputPath = jobFromDB.imagePath;
+
+          const fileName = path.basename(inputPath);
+
+          const outputPath = `processed/${fileName}`;
+
+          console.log("Processing image:", inputPath);
+
+          await sharp(inputPath)
+            .resize(300)
+            .jpeg({ quality: 60 })
+            .toFile(outputPath);
+
+          console.log("Saved:", outputPath);
+        }
+
+        // simulate old delay (keep your old logic feel)
         await new Promise((r) => setTimeout(r, 1000));
 
-        const success = Math.random() > 0.3;
+        const success = Math.random() > 0.1;
 
         if (!success) throw new Error("Fail");
 
@@ -71,12 +96,11 @@ const startWorker = async () => {
 
         console.log("Completed:", jobId);
 
-        channel.ack(msg); // Success
-
+        channel.ack(msg);
       } catch (err) {
         const jobFromDB = await Job.findById(jobId);
 
-        const retries = jobFromDB.retries || 0;
+        const retries = jobFromDB?.retries || 0;
 
         if (retries >= 3) {
           console.log("Send to DLQ:", jobId);
@@ -85,9 +109,8 @@ const startWorker = async () => {
             status: "failed",
           });
 
-          // send to DLQ automatically
+          // DLQ
           channel.nack(msg, false, false);
-
         } else {
           console.log("Retry:", retries + 1);
 
@@ -96,12 +119,11 @@ const startWorker = async () => {
             status: "pending",
           });
 
-          // requeue
+          // retry
           channel.nack(msg, false, true);
         }
       }
     });
-
   } catch (err) {
     console.error(err);
   }

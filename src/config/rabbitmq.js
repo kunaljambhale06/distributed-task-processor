@@ -28,7 +28,6 @@ export const connectQueue = async () => {
   console.log("RabbitMQ Connected");
 };
 
-
 export const sendToQueue = async (job) => {
 
   channel.sendToQueue(
@@ -37,4 +36,8 @@ export const sendToQueue = async (job) => {
     { persistent: true }
   );
 
+};
+
+export const getChannel = () => {
+  return channel;
 };

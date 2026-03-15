@@ -6,13 +6,19 @@ import {
   getJobStats,
   getQueueStats,
   resetSystem,
-  clearFailed
+  clearFailed,
+  addJob,
+  uploadJob
 } from "../controllers/jobController.js";
+
+import upload from "../config/multer.js";
+
 
 const router = express.Router();
 
 router.post("/", createJob);
-
+router.post("/add", addJob);
+router.post("/upload", upload.single("image"), uploadJob);
 router.get("/", getJobs);
 
 router.get("/stats", getJobStats);
