@@ -18,6 +18,8 @@ const startServer = async () => {
     app.use(cors());
 
     app.use("/jobs", jobRoutes);
+    app.use("/uploads", express.static("uploads"));
+    app.use("/processed", express.static("processed"));
 
     app.listen(5000, () =>
         console.log(" Server running on port 5000")
