@@ -41,7 +41,7 @@ const startWorker = async () => {
       const jobData = JSON.parse(msg.content.toString());
 
       // IMPORTANT
-      const jobId = jobData.jobId || jobData._id;
+      const jobId = jobData._id || jobData.jobId;
 
       console.log("Processing Job:", jobId);
 

@@ -190,6 +190,8 @@ export default function App() {
 
             <th className="border p-2">Retries</th>
 
+            <th className="border p-2">Image</th>
+
           </tr>
 
         </thead>
@@ -214,6 +216,17 @@ export default function App() {
 
               <td className="border p-2">
                 {j.retries || 0} / 3
+              </td>
+
+              <td className="border p-2">
+                {j.imagePath ? (
+                  <img
+                    src={`http://localhost:5000/${j.imagePath}`}
+                    width="60"
+                  />
+                ) : (
+                  "-"
+                )}
               </td>
 
             </tr>
