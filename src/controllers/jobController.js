@@ -159,13 +159,11 @@ export const uploadJob = async (req, res) => {
 
     const channel = getChannel();
 
-    
-
     channel.sendToQueue(
       "jobQueue",
       Buffer.from(
         JSON.stringify({
-          jobId: job._id,
+          _id: job._id,   // FIX
         })
       ),
       { persistent: true }
