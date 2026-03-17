@@ -18,6 +18,20 @@ const jobSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+
+    processedImagePath: {
+      type: String,
+      default: null,
+    },
+
+    jobType: {
+      type: String,
+      default: "manual",
+    },
+
+    startedAt: Date,
+
+    finishedAt: Date,
   },
   { timestamps: true }
 );
