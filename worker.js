@@ -62,16 +62,15 @@ const startWorker = async () => {
           status: "processing",
         });
 
-        // -------------------------
-        // IMAGE PROCESSING PART
-        // -------------------------
+
 
         if (jobFromDB.imagePath) {
+
           const inputPath = jobFromDB.imagePath;
 
           const fileName = path.basename(inputPath);
 
-          const outputPath = `processed/${fileName}`;
+          const outputPath = `processed/${Date.now()}_${fileName}`;
 
           console.log("Processing image:", inputPath);
 
@@ -79,6 +78,10 @@ const startWorker = async () => {
             .resize(300)
             .jpeg({ quality: 60 })
             .toFile(outputPath);
+
+          await Job.findByIdAndUpdate(jobId, {
+            processedImagePath: outputPath,
+          });
 
           console.log("Saved:", outputPath);
         }

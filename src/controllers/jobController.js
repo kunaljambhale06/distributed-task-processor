@@ -67,8 +67,13 @@ export const getQueueStats = async (req, res) => {
 export const createJob = async (req, res) => {
   try {
 
-    const job = await Job.create(req.body);
-
+    const job = await Job.create({
+    name: file.originalname,
+    status: "pending",
+    retries: 0,
+    imagePath: file.path,
+    jobType: "image",
+    })
     await sendToQueue(job);
 
     res.json(job);
@@ -152,6 +157,7 @@ export const uploadJob = async (req, res) => {
       name: file.originalname,
       status: "pending",
       imagePath: file.path,
+      jobType: "image"
     });
 
     const channel = getChannel();
@@ -160,7 +166,7 @@ export const uploadJob = async (req, res) => {
       "jobQueue",
       Buffer.from(
         JSON.stringify({
-          _id: job._id,   // FIX
+          _id: job._id,
         })
       ),
       { persistent: true }
@@ -184,6 +190,7 @@ export const addJob = async (req, res) => {
     const job = await Job.create({
       name: "Manual Job",
       status: "pending",
+      jobType: "manual"
     });
 
     const channel = getChannel();
