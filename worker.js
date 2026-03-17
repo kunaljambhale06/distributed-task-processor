@@ -60,6 +60,7 @@ const startWorker = async () => {
 
         await Job.findByIdAndUpdate(jobId, {
           status: "processing",
+          startedAt: new Date(),
         });
 
 
@@ -81,6 +82,8 @@ const startWorker = async () => {
 
           await Job.findByIdAndUpdate(jobId, {
             processedImagePath: outputPath,
+            finishedAt: new Date(),
+            status: "completed",
           });
 
           console.log("Saved:", outputPath);
@@ -95,6 +98,7 @@ const startWorker = async () => {
 
         await Job.findByIdAndUpdate(jobId, {
           status: "completed",
+          finishedAt: new Date(),
         });
 
         console.log("Completed:", jobId);
@@ -120,6 +124,8 @@ const startWorker = async () => {
           await Job.findByIdAndUpdate(jobId, {
             retries: retries + 1,
             status: "pending",
+            startedAt: null,
+            finishedAt: null,
           });
 
           // retry
