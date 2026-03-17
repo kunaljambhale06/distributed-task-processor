@@ -60,7 +60,7 @@ export default function App() {
   const addJob = async () => {
     try {
       setLoading(true);
-      await axios.post(API, { name: "Job" });
+      await axios.post(`${API}/add`, { name: "Job" });
       toast.success("Job added");
       fetchAll();
     } catch {

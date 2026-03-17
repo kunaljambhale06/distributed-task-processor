@@ -190,7 +190,7 @@ export const addJob = async (req, res) => {
     const job = await Job.create({
       name: "Manual Job",
       status: "pending",
-      jobType: "manual"
+      jobType: "manual",
     });
 
     const channel = getChannel();
@@ -199,14 +199,19 @@ export const addJob = async (req, res) => {
       "jobQueue",
       Buffer.from(
         JSON.stringify({
-          jobId: job._id,
+          _id: job._id,
         })
       ),
       { persistent: true }
     );
 
     res.json(job);
+
   } catch (err) {
-    res.status(500).json({ message: "Error" });
+    console.log(err);
+
+    res.status(500).json({
+      message: "Error adding job",
+    });
   }
 };
