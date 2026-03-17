@@ -86,7 +86,7 @@ const startWorker = async () => {
         // simulate old delay (keep your old logic feel)
         await new Promise((r) => setTimeout(r, 1000));
 
-        const success = Math.random() > 0.1;
+        const success = Math.random() > 0.9; // 10% success rate
 
         if (!success) throw new Error("Fail");
 

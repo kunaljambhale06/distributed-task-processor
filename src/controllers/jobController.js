@@ -100,20 +100,16 @@ export const getJobs = async (req, res) => {
 
 export const clearFailed = async (req, res) => {
   try {
+    await Job.deleteMany({ status: "failed" });
 
-    const connection = await amqp.connect("amqp://localhost");
-    const channel = await connection.createChannel();
-
-    // do NOT assert
-    await channel.purgeQueue("failed_jobs");
-
-    await channel.close();
-    await connection.close();
-
-    res.json({ message: "cleared" });
+    res.json({
+      message: "Failed jobs cleared",
+    });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      message: "Error",
+    });
   }
 };
 
