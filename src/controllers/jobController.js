@@ -157,7 +157,8 @@ export const uploadJob = async (req, res) => {
       name: file.originalname,
       status: "pending",
       imagePath: file.path,
-      jobType: "image"
+      jobType: "image",
+      retries: 0,
     });
 
     const channel = getChannel();
