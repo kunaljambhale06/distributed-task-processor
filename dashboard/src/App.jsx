@@ -202,17 +202,24 @@ export default function App() {
           <table className="w-full border border-black">
 
             <thead>
-
               <tr className="bg-gray-300">
 
                 <th className="border p-2">ID</th>
+
                 <th className="border p-2">Name</th>
+
+                <th className="border p-2">Type</th>
+
                 <th className="border p-2">Status</th>
+
                 <th className="border p-2">Retries</th>
-                <th className="border p-2">Image</th>
 
+                <th className="border p-2">Time</th>
+
+                <th className="border p-2">Original</th>
+
+                <th className="border p-2">Processed</th>
               </tr>
-
             </thead>
 
             <tbody>
@@ -229,6 +236,11 @@ export default function App() {
                     {j.name || "-"}
                   </td>
 
+                  {/* NEW jobType */}
+                  <td className="border p-2">
+                    {j.jobType || "-"}
+                  </td>
+
                   <td className="border p-2">
                     {badge(j.status)}
                   </td>
@@ -237,23 +249,43 @@ export default function App() {
                     {j.retries || 0} / 3
                   </td>
 
+                  {/* NEW time */}
+                  <td className="border p-2">
+                    {j.startedAt && j.finishedAt
+                      ? Math.floor(
+                        (new Date(j.finishedAt) -
+                          new Date(j.startedAt)) /
+                        1000
+                      ) + "s"
+                      : "-"}
+                  </td>
+
+                  {/* original */}
                   <td className="border p-2">
 
                     {j.imagePath ? (
-
                       <img
                         src={`http://localhost:5000/${j.imagePath}`}
                         width="60"
                       />
-
                     ) : (
-
                       "-"
-
                     )}
 
                   </td>
 
+                  {/* NEW processed */}
+                  <td className="border p-2">
+
+                    {j.processedImagePath ? (
+                      <img
+                        src={`http://localhost:5000/${j.processedImagePath}`}
+                        width="60"
+                      />
+                    ) : (
+                      "-"
+                    )}
+                  </td>
                 </tr>
 
               ))}
