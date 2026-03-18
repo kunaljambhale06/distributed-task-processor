@@ -18,6 +18,7 @@ const startWorker = async () => {
 
     const connection = await amqp.connect("amqp://localhost");
     const channel = await connection.createChannel();
+    await channel.prefetch(1);
 
     // main queue with DLQ
     await channel.assertQueue(QUEUE, {
@@ -46,93 +47,84 @@ const startWorker = async () => {
       console.log("Processing Job:", jobId);
 
       try {
-        const jobFromDB = await Job.findById(jobId);
+        const jobFromDB = await Job.findOneAndUpdate(
+          {
+            _id: jobId,
+            status: "pending",
+          },
+          {
+            status: "processing",
+            startedAt: new Date(),
+          },
+          {
+            new: true,
+          }
+        );
 
         if (!jobFromDB) {
           channel.ack(msg);
           return;
         }
 
-        if (jobFromDB.status === "completed") {
-          channel.ack(msg);
-          return;
-        }
 
-        await Job.findByIdAndUpdate(jobId, {
-          status: "processing",
-          startedAt: new Date(),
-        });
-
-
+        let processedPath = null;
 
         if (jobFromDB.imagePath) {
-
           const inputPath = jobFromDB.imagePath;
-
           const fileName = path.basename(inputPath);
-
-          const outputPath = `processed/${Date.now()}_${fileName}`;
-
-          console.log("Processing image:", inputPath);
-
+          processedPath = `processed/${Date.now()}_${fileName}`;
           await sharp(inputPath)
             .resize(300)
             .jpeg({ quality: 60 })
-            .toFile(outputPath);
-
-          await Job.findByIdAndUpdate(jobId, {
-            processedImagePath: outputPath,
-            finishedAt: new Date(),
-            status: "completed",
-          });
-
-          console.log("Saved:", outputPath);
+            .toFile(processedPath);
+          console.log("Saved:", processedPath);
         }
 
-        // simulate old delay (keep your old logic feel)
-        await new Promise((r) => setTimeout(r, 1000));
+      // simulate old delay (keep your old logic feel)
+      await new Promise((r) => setTimeout(r, 1000));
 
-        const success = Math.random() > 0.9; // 10% success rate
+      const success = Math.random() > 0.9; // 10% success rate
+      if (!success) throw new Error("Fail");
 
-        if (!success) throw new Error("Fail");
+      await Job.findByIdAndUpdate(jobId, {
+        status: "completed",
+        finishedAt: new Date(),
+        processedImagePath: processedPath || null,
+      });
+
+      console.log("Completed:", jobId);
+      channel.ack(msg);
+    } catch (err) {
+      const jobFromDB = await Job.findById(jobId);
+
+      const retries = jobFromDB?.retries || 0;
+
+      if (retries >= 3) {
+        console.log("Send to DLQ:", jobId);
 
         await Job.findByIdAndUpdate(jobId, {
-          status: "completed",
-          finishedAt: new Date(),
+          status: "failed",
         });
 
-        console.log("Completed:", jobId);
+        // DLQ
+        channel.nack(msg, false, false);
+      } else {
+        console.log("Retry:", retries + 1);
 
-        channel.ack(msg);
-      } catch (err) {
-        const jobFromDB = await Job.findById(jobId);
+        console.log("Retrying job:", jobId);
 
-        const retries = jobFromDB?.retries || 0;
+        await Job.findByIdAndUpdate(jobId, {
+          retries: retries + 1,
+          status: "pending",
+          startedAt: null,
+          finishedAt: null,
+        });
 
-        if (retries >= 3) {
-          console.log("Send to DLQ:", jobId);
-
-          await Job.findByIdAndUpdate(jobId, {
-            status: "failed",
-          });
-
-          // DLQ
-          channel.nack(msg, false, false);
-        } else {
-          console.log("Retry:", retries + 1);
-
-          await Job.findByIdAndUpdate(jobId, {
-            retries: retries + 1,
-            status: "pending",
-            startedAt: null,
-            finishedAt: null,
-          });
-
-          // retry
-          channel.nack(msg, false, true);
-        }
+        // retry
+        channel.nack(msg, false, true);
       }
-    });
+    }
+  });
   } catch (err) {
     console.error(err);
   }
