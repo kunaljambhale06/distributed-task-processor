@@ -28,14 +28,18 @@ export default function App() {
   const [queue, setQueue] = useState({});
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState("dashboard");
+  const [workers, setWorkers] = useState({});
 
   const fetchAll = async () => {
     try {
-      const [j, s, q] = await Promise.all([
+      const [j, s, q, w] = await Promise.all([
         axios.get(API),
         axios.get(`${API}/stats`),
         axios.get(`${API}/queue-stats`),
+        axios.get(`${API}/workers`),
       ]);
+
+      setWorkers(w.data);
 
       const sorted = [...j.data].sort((a, b) => {
         if (a.status === "failed") return -1;
@@ -161,6 +165,14 @@ export default function App() {
 
           </div>
 
+          <div className="bg-gray-100 p-3 rounded mb-4">
+
+            <h2 className="font-bold mb-2">Workers</h2>
+
+            Active Workers: {workers.count}
+
+          </div>
+
           {/* admin */}
 
           <div className="bg-gray-100 p-3 rounded mb-4">
@@ -265,21 +277,24 @@ export default function App() {
                   {/* original */}
                   <td className="border p-2">
 
-                    {j.imagePath ? (
+                    {j.jobType === "image" &&
+                      j.status !== "failed" &&
+                      j.imagePath ? (
+
                       <img
                         src={`http://localhost:5000/${j.imagePath}`}
                         width="60"
                       />
+
                     ) : (
                       "-"
                     )}
-
                   </td>
 
                   {/* NEW processed */}
                   <td className="border p-2">
 
-                    {j.processedImagePath ? (
+                    {j.status === "completed" && j.processedImagePath ? (
                       <img
                         src={`http://localhost:5000/${j.processedImagePath}`}
                         width="60"

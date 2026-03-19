@@ -8,7 +8,8 @@ import {
   resetSystem,
   clearFailed,
   addJob,
-  uploadJob
+  uploadJob,
+  getWorkers
 } from "../controllers/jobController.js";
 
 import upload from "../config/multer.js";
