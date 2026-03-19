@@ -32,6 +32,11 @@ const jobSchema = new mongoose.Schema(
     startedAt: Date,
 
     finishedAt: Date,
+
+    workerId: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

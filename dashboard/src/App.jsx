@@ -219,6 +219,8 @@ export default function App() {
                 <th className="border p-2">Original</th>
 
                 <th className="border p-2">Processed</th>
+
+                <th className="border p-2">Worker</th>
               </tr>
             </thead>
 
@@ -285,6 +287,9 @@ export default function App() {
                     ) : (
                       "-"
                     )}
+                  </td>
+                  <td className="border p-2">
+                    {j.workerId || "-"}
                   </td>
                 </tr>
 

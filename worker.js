@@ -5,11 +5,13 @@ import dotenv from "dotenv";
 import sharp from "sharp";
 import fs from "fs";
 import path from "path";
+import os from "os";
 
 dotenv.config();
 
 const QUEUE = "jobQueue";
 const DLQ = "failed_jobs";
+const WORKER_ID = os.hostname() + "-" + process.pid;
 
 const startWorker = async () => {
   try {
@@ -55,6 +57,7 @@ const startWorker = async () => {
           {
             status: "processing",
             startedAt: new Date(),
+            workerId: WORKER_ID,
           },
           {
             new: true,
