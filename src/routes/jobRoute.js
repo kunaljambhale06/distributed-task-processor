@@ -8,7 +8,8 @@ import {
   resetSystem,
   clearFailed,
   addJob,
-  uploadJob
+  uploadJob,
+  getWorkers
 } from "../controllers/jobController.js";
 
 import upload from "../config/multer.js";
@@ -28,5 +29,7 @@ router.get("/queue-stats", getQueueStats);
 router.post("/admin/reset", resetSystem);
 
 router.post("/clear-failed", clearFailed);
+
+router.get("/workers", getWorkers);
 
 export default router;
