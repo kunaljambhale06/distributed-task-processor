@@ -2,6 +2,7 @@ import Job from "../models/Job.js";
 import { sendToQueue } from "../config/rabbitmq.js";
 import amqp from "amqplib";
 import { getChannel } from "../config/rabbitmq.js";
+import Worker from "../models/Worker.js";
 
 
 // ---------------- STATS ----------------
@@ -213,6 +214,23 @@ export const addJob = async (req, res) => {
 
     res.status(500).json({
       message: "Error adding job",
+    });
+  }
+};
+
+export const getWorkers = async (req, res) => {
+  try {
+    const workers = await Worker.find();
+
+    res.json({
+      count: workers.length,
+      workers,
+    });
+
+  } catch {
+    res.json({
+      count: 0,
+      workers: [],
     });
   }
 };

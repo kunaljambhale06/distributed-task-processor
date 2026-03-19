@@ -6,6 +6,7 @@ import sharp from "sharp";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import Worker from "./src/models/Worker.js";
 
 dotenv.config();
 
@@ -13,10 +14,22 @@ const QUEUE = "jobQueue";
 const DLQ = "failed_jobs";
 const WORKER_ID = os.hostname() + "-" + process.pid;
 
+const heartbeat = async () => {
+  await Worker.findOneAndUpdate(
+    { workerId: WORKER_ID },
+    {
+      workerId: WORKER_ID,
+      lastSeen: new Date(),
+    },
+    { upsert: true }
+  );
+};
+
 const startWorker = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("Worker DB Connected");
+    setInterval(heartbeat, 3000);
 
     const connection = await amqp.connect("amqp://localhost");
     const channel = await connection.createChannel();

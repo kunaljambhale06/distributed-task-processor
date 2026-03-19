@@ -29,4 +29,6 @@ router.post("/admin/reset", resetSystem);
 
 router.post("/clear-failed", clearFailed);
 
+router.get("/workers", getWorkers);
+
 export default router;
