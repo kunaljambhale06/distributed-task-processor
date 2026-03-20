@@ -63,16 +63,14 @@ const startWorker = async () => {
 
       try {
         const jobFromDB = await Job.findOneAndUpdate(
-          {
-            _id: jobId,
-            status: "pending",
-          },
+          { status: "pending" },
           {
             status: "processing",
             startedAt: new Date(),
             workerId: WORKER_ID,
           },
           {
+            sort: { priority: -1, createdAt: 1 },
             new: true,
           }
         );
@@ -96,51 +94,51 @@ const startWorker = async () => {
           console.log("Saved:", processedPath);
         }
 
-      // simulate old delay (keep your old logic feel)
-      await new Promise((r) => setTimeout(r, 1000));
+        // simulate old delay (keep your old logic feel)
+        await new Promise((r) => setTimeout(r, 1000));
 
-      const success = Math.random() > 0.9; // 10% success rate
-      if (!success) throw new Error("Fail");
-
-      await Job.findByIdAndUpdate(jobId, {
-        status: "completed",
-        finishedAt: new Date(),
-        processedImagePath: processedPath || null,
-      });
-
-      console.log("Completed:", jobId);
-      channel.ack(msg);
-    } catch (err) {
-      const jobFromDB = await Job.findById(jobId);
-
-      const retries = jobFromDB?.retries || 0;
-
-      if (retries >= 3) {
-        console.log("Send to DLQ:", jobId);
+        const success = Math.random() > 0.9; // 10% success rate
+        if (!success) throw new Error("Fail");
 
         await Job.findByIdAndUpdate(jobId, {
-          status: "failed",
+          status: "completed",
+          finishedAt: new Date(),
+          processedImagePath: processedPath || null,
         });
 
-        // DLQ
-        channel.nack(msg, false, false);
-      } else {
-        console.log("Retry:", retries + 1);
+        console.log("Completed:", jobId);
+        channel.ack(msg);
+      } catch (err) {
+        const jobFromDB = await Job.findById(jobId);
 
-        console.log("Retrying job:", jobId);
+        const retries = jobFromDB?.retries || 0;
 
-        await Job.findByIdAndUpdate(jobId, {
-          retries: retries + 1,
-          status: "pending",
-          startedAt: null,
-          finishedAt: null,
-        });
+        if (retries >= 3) {
+          console.log("Send to DLQ:", jobId);
 
-        // retry
-        channel.nack(msg, false, true);
+          await Job.findByIdAndUpdate(jobId, {
+            status: "failed",
+          });
+
+          // DLQ
+          channel.nack(msg, false, false);
+        } else {
+          console.log("Retry:", retries + 1);
+
+          console.log("Retrying job:", jobId);
+
+          await Job.findByIdAndUpdate(jobId, {
+            retries: retries + 1,
+            status: "pending",
+            startedAt: null,
+            finishedAt: null,
+          });
+
+          // retry
+          channel.nack(msg, false, true);
+        }
       }
-    }
-  });
+    });
   } catch (err) {
     console.error(err);
   }
