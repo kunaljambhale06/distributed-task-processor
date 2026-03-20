@@ -37,6 +37,10 @@ const jobSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    priority: {
+      type: Number,
+      default: 1,
+    },
   },
   { timestamps: true }
 );

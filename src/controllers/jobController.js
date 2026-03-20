@@ -3,6 +3,7 @@ import { sendToQueue } from "../config/rabbitmq.js";
 import amqp from "amqplib";
 import { getChannel } from "../config/rabbitmq.js";
 import Worker from "../models/Worker.js";
+import redis from "../config/redis.js";
 
 
 // ---------------- STATS ----------------
@@ -10,25 +11,36 @@ import Worker from "../models/Worker.js";
 export const getJobStats = async (req, res) => {
   try {
 
+    const cached = await redis.get("stats");
+
+    if (cached) {
+      return res.json(JSON.parse(cached));
+    }
+
     const total = await Job.countDocuments();
     const pending = await Job.countDocuments({ status: "pending" });
     const processing = await Job.countDocuments({ status: "processing" });
     const completed = await Job.countDocuments({ status: "completed" });
     const failed = await Job.countDocuments({ status: "failed" });
 
-    res.json({
+    const data = {
       total,
       pending,
       processing,
       completed,
       failed,
+    };
+
+    await redis.set("stats", JSON.stringify(data), {
+      EX: 5,
     });
+
+    res.json(data);
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-
 
 
 // ---------------- QUEUE STATS ----------------
@@ -69,11 +81,11 @@ export const createJob = async (req, res) => {
   try {
 
     const job = await Job.create({
-    name: file.originalname,
-    status: "pending",
-    retries: 0,
-    imagePath: file.path,
-    jobType: "image",
+      name: file.originalname,
+      status: "pending",
+      retries: 0,
+      imagePath: file.path,
+      jobType: "image",
     })
     await sendToQueue(job);
 
@@ -193,6 +205,7 @@ export const addJob = async (req, res) => {
       name: "Manual Job",
       status: "pending",
       jobType: "manual",
+      priority: 1,
     });
 
     const channel = getChannel();
