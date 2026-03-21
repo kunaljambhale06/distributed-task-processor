@@ -15,7 +15,7 @@ const startServer = async () => {
     await connectQueue();
     const limiter = rateLimit({
         windowMs: 1000,
-        max: 5,
+        max: 100,
     });
 
     const app = express();
