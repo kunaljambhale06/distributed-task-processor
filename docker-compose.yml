@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/jobs
+      - REDIS_HOST=redis
+      - RABBITMQ_URL=amqp://rabbitmq
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/jobs
+      - REDIS_HOST=redis
+      - RABBITMQ_URL=amqp://rabbitmq
+
+  frontend:
+    build:
+      context: ./dashboard
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
