@@ -8,7 +8,9 @@ import path from "path";
 import os from "os";
 import Worker from "./src/models/Worker.js";
 
-dotenv.config();
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 
 const QUEUE = "jobQueue";
 const DLQ = "failed_jobs";
@@ -31,7 +33,19 @@ const startWorker = async () => {
     console.log("Worker DB Connected");
     setInterval(heartbeat, 3000);
 
-    const connection = await amqp.connect("amqp://localhost");
+    const connectRabbit = async () => {
+      while (true) {
+        try {
+          const conn = await amqp.connect(process.env.RABBITMQ_URL);
+          return conn;
+        } catch (err) {
+          console.log("Waiting for RabbitMQ...");
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      }
+    };
+
+    const connection = await connectRabbit();
     const channel = await connection.createChannel();
     await channel.prefetch(1);
 

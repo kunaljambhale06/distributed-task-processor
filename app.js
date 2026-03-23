@@ -7,7 +7,9 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 
 
-dotenv.config();
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 
 const startServer = async () => {
 
