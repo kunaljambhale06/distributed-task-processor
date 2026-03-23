@@ -3,7 +3,7 @@ version: "3.9"
 services:
 
   mongo:
-    image: mongo:7
+    image: mongo:6-jammy
     ports:
       - "27017:27017"
 
@@ -28,8 +28,10 @@ services:
       - mongo
       - redis
       - rabbitmq
+    restart: always
     environment:
-      - MONGO_URL=mongodb://mongo:27017/jobs
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/jobs
       - REDIS_HOST=redis
       - RABBITMQ_URL=amqp://rabbitmq
 
@@ -41,8 +43,10 @@ services:
       - mongo
       - redis
       - rabbitmq
+    restart: always
     environment:
-      - MONGO_URL=mongodb://mongo:27017/jobs
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/jobs
       - REDIS_HOST=redis
       - RABBITMQ_URL=amqp://rabbitmq
 
