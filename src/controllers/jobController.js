@@ -5,6 +5,7 @@ import { getChannel } from "../config/rabbitmq.js";
 import Worker from "../models/Worker.js";
 import redis from "../config/redis.js";
 
+//TODO: UPDATE THE addJob TO WORK ACCORDING TO THE PRIORITY OF THE JOB.
 
 // ---------------- STATS ----------------
 
