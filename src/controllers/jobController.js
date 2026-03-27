@@ -202,11 +202,12 @@ export const uploadJob = async (req, res) => {
 
 export const addJob = async (req, res) => {
   try {
+    const { priority = 1 } = req.body;
     const job = await Job.create({
       name: "Manual Job",
       status: "pending",
       jobType: "manual",
-      priority: 1,
+      priority: Number(priority),
     });
 
     const channel = getChannel();
