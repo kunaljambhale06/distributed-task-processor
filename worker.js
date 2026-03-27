@@ -72,10 +72,9 @@ const startWorker = async () => {
 
       const jobId = jobData._id || jobData.jobId;
 
-      console.log("Processing Job:", jobId);
 
       try {
-        const jobFromDB = await Job.findOneAndUpdate(
+         const jobFromDB = await Job.findOneAndUpdate(
           { status: "pending" },
           {
             status: "processing",
@@ -93,6 +92,7 @@ const startWorker = async () => {
           return;
         }
 
+        console.log("🚀 Processing Job:", jobFromDB._id, "| Priority:", jobFromDB.priority);
 
         let processedPath = null;
 
@@ -119,7 +119,6 @@ const startWorker = async () => {
           processedImagePath: processedPath || null,
         });
 
-        console.log("Completed:", jobId);
         channel.ack(msg);
       } catch (err) {
         const jobFromDB = await Job.findById(jobId);
