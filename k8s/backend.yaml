@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: distributed-task-processor-backend:v4
+          image: distributed-task-processor-backend:v5
           imagePullPolicy: Never
 
           ports:
