@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: distributed-task-processor-frontend:latest
+        image: distributed-task-processor-frontend:v2
         imagePullPolicy: Never
 
         ports:

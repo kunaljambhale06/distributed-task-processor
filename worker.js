@@ -74,7 +74,7 @@ const startWorker = async () => {
 
 
       try {
-         const jobFromDB = await Job.findOneAndUpdate(
+        const jobFromDB = await Job.findOneAndUpdate(
           { status: "pending" },
           {
             status: "processing",
@@ -97,7 +97,7 @@ const startWorker = async () => {
         let processedPath = null;
 
         if (jobFromDB.imagePath) {
-          const inputPath = jobFromDB.imagePath;
+          const inputPath = jobFromDB.imagePath.replace("/api/", "");
           const fileName = path.basename(inputPath);
           processedPath = `processed/${Date.now()}_${fileName}`;
           await sharp(inputPath)
@@ -116,7 +116,9 @@ const startWorker = async () => {
         await Job.findByIdAndUpdate(jobId, {
           status: "completed",
           finishedAt: new Date(),
-          processedImagePath: processedPath || null,
+          processedImagePath: processedPath
+            ? `/api/${processedPath}`
+            : null,
         });
 
         channel.ack(msg);

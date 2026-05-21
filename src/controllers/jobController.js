@@ -170,7 +170,7 @@ export const uploadJob = async (req, res) => {
     const job = await Job.create({
       name: file.originalname,
       status: "pending",
-      imagePath: file.path,
+      imagePath: `/api/${file.path}`,
       jobType: "image",
       retries: 0,
     });
