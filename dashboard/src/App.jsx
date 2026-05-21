@@ -13,7 +13,7 @@ import {
   Legend,
 } from "recharts";
 
-const API = "http://localhost:5000/jobs";
+const API = "/api/jobs";
 
 const COLORS = [
   "#facc15",
@@ -282,7 +282,7 @@ export default function App() {
                       j.imagePath ? (
 
                       <img
-                        src={`http://localhost:5000/${j.imagePath}`}
+                         src={j.imagePath}
                         width="60"
                       />
 
@@ -296,7 +296,7 @@ export default function App() {
 
                     {j.status === "completed" && j.processedImagePath ? (
                       <img
-                        src={`http://localhost:5000/${j.processedImagePath}`}
+                        src={j.processedImagePath}
                         width="60"
                       />
                     ) : (

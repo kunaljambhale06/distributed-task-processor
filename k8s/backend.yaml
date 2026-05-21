@@ -1,48 +1,70 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: backend
   namespace: image-system
+
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app: backend
+
   template:
     metadata:
       labels:
         app: backend
+
     spec:
       containers:
-      - name: backend
-        image: distributed-task-processor-backend:latest
-        imagePullPolicy: Never
+        - name: backend
+          image: distributed-task-processor-backend:v4
+          imagePullPolicy: Never
 
-        ports:
-        - containerPort: 5000
+          ports:
+            - containerPort: 5000
 
-        env:
-        - name: PORT
-          value: "5000"
+          env:
+            - name: PORT
+              value: "5000"
 
-        - name: MONGO_URI
-          value: "mongodb://mongo:27017/image-processing"
+            - name: MONGO_URI
+              value: "mongodb://mongo:27017/image-processing"
 
-        - name: REDIS_HOST
-          value: "redis"
+            - name: REDIS_HOST
+              value: "redis"
 
-        - name: RABBITMQ_URL
-          value: "amqp://rabbitmq"
+            - name: RABBITMQ_URL
+              value: "amqp://rabbitmq"
+
+          volumeMounts:
+            - name: image-storage
+              mountPath: /app/uploads
+              subPath: uploads
+
+            - name: image-storage
+              mountPath: /app/processed
+              subPath: processed
+
+      volumes:
+        - name: image-storage
+          persistentVolumeClaim:
+            claimName: image-storage-pvc
 
 ---
 apiVersion: v1
 kind: Service
+
 metadata:
   name: backend
   namespace: image-system
+
 spec:
   selector:
     app: backend
+
   ports:
-  - port: 5000
-    targetPort: 5000
+    - port: 5000
+      targetPort: 5000

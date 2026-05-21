@@ -5,10 +5,11 @@ import jobRoutes from "./src/routes/jobRoute.js";
 import { connectQueue } from "./src/config/rabbitmq.js";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import path from "path";
 
 
 if (process.env.NODE_ENV !== "production") {
-  dotenv.config();
+    dotenv.config();
 }
 
 const startServer = async () => {
@@ -24,11 +25,21 @@ const startServer = async () => {
     app.use(express.json());
     app.use(cors());
 
-    app.use("/jobs", limiter);
-    app.use("/jobs", jobRoutes);
-    app.use("/uploads", express.static("uploads"));
-    app.use("/processed", express.static("processed"));
-    
+    app.use("/api/jobs", limiter);
+    app.use("/api/jobs", jobRoutes);
+
+    // app.use("/api/uploads", express.static("uploads"));
+    // app.use("/api/processed", express.static("processed"));
+    app.use(
+        "/api/uploads",
+        express.static(path.resolve("uploads"))
+    );
+
+    app.use(
+        "/api/processed",
+        express.static(path.resolve("processed"))
+    );
+
 
     app.listen(5000, () =>
         console.log(" Server running on port 5000")
