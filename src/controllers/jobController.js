@@ -5,7 +5,7 @@ import { getChannel } from "../config/rabbitmq.js";
 import Worker from "../models/Worker.js";
 import redis from "../config/redis.js";
 
-//TODO: UPDATE THE addJob TO WORK ACCORDING TO THE PRIORITY OF THE JOB.
+
 
 // ---------------- STATS ----------------
 
@@ -49,7 +49,7 @@ export const getJobStats = async (req, res) => {
 export const getQueueStats = async (req, res) => {
   try {
 
-    const connection = await amqp.connect("amqp://localhost");
+    const connection = await amqp.connect(process.env.RABBITMQ_URL);
     const channel = await connection.createChannel();
 
     // DO NOT assert queue here
@@ -235,7 +235,12 @@ export const addJob = async (req, res) => {
 
 export const getWorkers = async (req, res) => {
   try {
-    const workers = await Worker.find();
+
+    const activeThreshold = new Date(Date.now() - 10000);
+
+    const workers = await Worker.find({
+      lastSeen: { $gte: activeThreshold },
+    });
 
     res.json({
       count: workers.length,
