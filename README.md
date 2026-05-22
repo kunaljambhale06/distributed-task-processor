@@ -359,9 +359,6 @@ This project helped in understanding:
 
 ---
 
-# 💼 Resume Description
-
-> Built a Distributed Image Processing System using Node.js, RabbitMQ, Redis, MongoDB, Docker, and Kubernetes. Implemented asynchronous image processing with distributed workers, retry handling, dead letter queues, Redis caching, and Kubernetes-based deployment using Minikube and NGINX Ingress.
 
 ---
 
@@ -369,7 +366,7 @@ This project helped in understanding:
 
 **Kunal Jambhale**
 
-[![GitHub](https://img.shields.io/badge/GitHub-KunalJambhale-181717?style=flat-square&logo=github)](https://github.com/KunalJambhale)
+[![GitHub](https://img.shields.io/badge/GitHub-kunaljambhale06-181717?style=flat-square&logo=github)](https://github.com/kunaljambhale06)
 
 ---
 
