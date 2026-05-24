@@ -113,7 +113,7 @@ distributed-task-processor/
     ├── mongo.yaml
     ├── rabbitmq.yaml
     ├── redis.yaml
-    ├── pvc.yaml
+    ├── storage.yaml
     └── ingress.yaml
 ```
 
