@@ -6,6 +6,7 @@ import { connectQueue } from "./src/config/rabbitmq.js";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import path from "path";
+import helmet from "helmet";
 
 
 if (process.env.NODE_ENV !== "production") {
@@ -22,6 +23,7 @@ const startServer = async () => {
     });
 
     const app = express();
+    app.use(helmet());
     app.use(express.json());
     app.use(cors());
 
