@@ -74,19 +74,23 @@ const startWorker = async () => {
 
 
       try {
+        // const jobFromDB = await Job.findOneAndUpdate(
+        //   { status: "pending" },
+        //   {
+        //     status: "processing",
+        //     startedAt: new Date(),
+        //     workerId: WORKER_ID,
+        //   },
+        //   {
+        //     sort: { priority: -1, createdAt: 1 },
+        //     new: true,
+        //   }
+        // );
         const jobFromDB = await Job.findOneAndUpdate(
-          { status: "pending" },
-          {
-            status: "processing",
-            startedAt: new Date(),
-            workerId: WORKER_ID,
-          },
-          {
-            sort: { priority: -1, createdAt: 1 },
-            new: true,
-          }
+          { _id: jobId, status: "pending" },
+          { status: "processing", startedAt: new Date(), workerId: WORKER_ID },
+          { new: true }
         );
-
         if (!jobFromDB) {
           channel.ack(msg);
           return;

@@ -39,6 +39,12 @@ spec:
             - name: RABBITMQ_URL
               value: "amqp://rabbitmq"
 
+            - name: ADMIN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: ADMIN_SECRET
+
           volumeMounts:
             - name: image-storage
               mountPath: /app/uploads

@@ -4,6 +4,9 @@ import amqp from "amqplib";
 import { getChannel } from "../config/rabbitmq.js";
 import Worker from "../models/Worker.js";
 import redis from "../config/redis.js";
+import { fileTypeFromFile } from "file-type";
+import fs from "fs";
+
 
 
 
@@ -164,6 +167,16 @@ export const uploadJob = async (req, res) => {
     if (!file) {
       return res.status(400).json({
         message: "No file uploaded",
+      });
+    }
+
+    const type = await fileTypeFromFile(file.path);
+    const allowedMimes = ["image/png", "image/jpeg", "image/webp"];
+
+    if (!type || !allowedMimes.includes(type.mime)) {
+      fs.unlinkSync(file.path);
+      return res.status(400).json({
+        message: "Uploaded file is not a valid image",
       });
     }
 

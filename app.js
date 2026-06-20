@@ -6,6 +6,7 @@ import { connectQueue } from "./src/config/rabbitmq.js";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import path from "path";
+import multer from "multer";
 
 
 if (process.env.NODE_ENV !== "production") {
@@ -27,6 +28,13 @@ const startServer = async () => {
 
     app.use("/api/jobs", limiter);
     app.use("/api/jobs", jobRoutes);
+
+    app.use((err, req, res, next) => {
+        if (err instanceof multer.MulterError || err.message.includes("Only image files")) {
+            return res.status(400).json({ message: err.message });
+        }
+        next(err);
+    });
 
     // app.use("/api/uploads", express.static("uploads"));
     // app.use("/api/processed", express.static("processed"));
