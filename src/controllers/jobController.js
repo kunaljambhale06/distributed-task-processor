@@ -202,7 +202,7 @@ export const uploadJob = async (req, res) => {
 
 export const addJob = async (req, res) => {
   try {
-    const { priority = 1 } = req.body;
+    const priority = Number(req.body?.priority || 1);
     const job = await Job.create({
       name: "Manual Job",
       status: "pending",

@@ -243,7 +243,7 @@ export default function App() {
                 <tr key={j._id}>
 
                   <td className="border p-2">
-                    {j._id.slice(-6)}
+                    {j._id ? j._id.slice(-6) : "-"}
                   </td>
 
                   <td className="border p-2">
