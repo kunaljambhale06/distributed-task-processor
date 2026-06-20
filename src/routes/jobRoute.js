@@ -13,6 +13,7 @@ import {
 } from "../controllers/jobController.js";
 
 import upload from "../config/multer.js";
+import adminAuth from "../middleware/adminAuth.js";
 
 
 const router = express.Router();
@@ -26,9 +27,9 @@ router.get("/stats", getJobStats);
 
 router.get("/queue-stats", getQueueStats);
 
-router.post("/admin/reset", resetSystem);
+router.post("/admin/reset", adminAuth ,resetSystem);
 
-router.post("/clear-failed", clearFailed);
+router.post("/clear-failed", adminAuth, clearFailed);
 
 router.get("/workers", getWorkers);
 

@@ -243,7 +243,7 @@ export default function App() {
                 <tr key={j._id}>
 
                   <td className="border p-2">
-                    {j._id.slice(-6)}
+                    {j._id ? j._id.slice(-6) : "-"}
                   </td>
 
                   <td className="border p-2">
@@ -262,13 +262,15 @@ export default function App() {
                   <td className="border p-2">
                     {j.retries || 0} / 3
                   </td>
-
+                
                   {/* NEW time */}
                   <td className="border p-2">
-                    {j.startedAt && j.finishedAt
+                    {j.createdAt && j.finishedAt //TODO: Changed j.createdAt to j.finishedAt to 
+                                                 // show complete time from creation to getting done.
+                                                 // Previously it was j.startedAt
                       ? Math.floor(
                         (new Date(j.finishedAt) -
-                          new Date(j.startedAt)) /
+                          new Date(j.createdAt)) /
                         1000
                       ) + "s"
                       : "-"}

@@ -17,6 +17,23 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
 
+//TODO: CHANGED UPLOAD FOR SECURITY REASONS, ONLY ALLOW IMAGE FILES UNDER 10MB
+//const upload = multer({ storage });
+const allowedExtensions = [".png", ".jpg", ".jpeg", ".webp"];
+const allowedMimeTypes = ["image/png", "image/jpeg", "image/webp"];
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+  fileFilter: function (req, file, cb) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (!allowedExtensions.includes(ext) || !allowedMimeTypes.includes(file.mimetype)) {
+      return cb(new Error("Only image files (png, jpg, jpeg, webp) under 10MB are allowed"));
+    }
+    cb(null, true);
+  },
+});
 export default upload;
