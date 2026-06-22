@@ -29,6 +29,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState("dashboard");
   const [workers, setWorkers] = useState({});
+  const [adminKey, setAdminKey] = useState("");
 
   const fetchAll = async () => {
     try {
@@ -76,21 +77,25 @@ export default function App() {
 
   const clearFailed = async () => {
     try {
-      await axios.post(`${API}/clear-failed`);
+      await axios.post(`${API}/clear-failed`, {}, {
+        headers: { "x-admin-key": adminKey }
+      });
       toast.success("Failed cleared");
       fetchAll();
     } catch {
-      toast.error("Error");
+      toast.error("Error - check admin key");
     }
   };
 
   const reset = async () => {
     try {
-      await axios.post(`${API}/admin/reset`);
+      await axios.post(`${API}/admin/reset`, {}, {
+        headers: { "x-admin-key": adminKey }
+      });
       toast.success("System reset");
       fetchAll();
     } catch {
-      toast.error("Error");
+      toast.error("Error - check admin key");
     }
   };
 
@@ -186,6 +191,14 @@ export default function App() {
               Add Job
             </button>
 
+            <input
+              type="password"
+              placeholder="Admin key"
+              value={adminKey}
+              onChange={(e) => setAdminKey(e.target.value)}
+              className="border px-2 py-1 mr-2 rounded"
+            />
+
             <button
               onClick={clearFailed}
               className="bg-red-500 text-white px-3 py-1 mr-2 rounded"
@@ -262,12 +275,12 @@ export default function App() {
                   <td className="border p-2">
                     {j.retries || 0} / 3
                   </td>
-                
+
                   {/* NEW time */}
                   <td className="border p-2">
                     {j.createdAt && j.finishedAt //TODO: Changed j.createdAt to j.finishedAt to 
-                                                 // show complete time from creation to getting done.
-                                                 // Previously it was j.startedAt
+                      // show complete time from creation to getting done.
+                      // Previously it was j.startedAt
                       ? Math.floor(
                         (new Date(j.finishedAt) -
                           new Date(j.createdAt)) /
@@ -284,7 +297,7 @@ export default function App() {
                       j.imagePath ? (
 
                       <img
-                         src={j.imagePath}
+                        src={j.imagePath}
                         width="60"
                       />
 
